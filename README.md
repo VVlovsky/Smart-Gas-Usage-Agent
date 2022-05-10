@@ -130,6 +130,11 @@ data. It should be moved to `./test.db` e.g.
 ```bash
 cp ./test/database_presets/test_14442765-14489802.db ./test.db
 ```
+Upd: GitHub doesn't support big files so it is impossible to load the db for the test.
+Please complete the db manually before the test running:
+```bash
+npm run range 14442765..14489802
+```
 
 There are 7 tests that should pass:
 
