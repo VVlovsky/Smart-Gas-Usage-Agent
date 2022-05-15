@@ -13,6 +13,7 @@ from src.config import test_mode, history_capacity, minimal_capacity_to_forecast
 
 global blocks_counter
 global current_capacity
+global current_block
 
 initialized = False
 real_base_fee_detected = False
@@ -34,6 +35,7 @@ async def my_initialize(block_event: forta_agent.block_event.BlockEvent):
     global initialized
     global blocks_counter
     global current_capacity
+    global current_block
 
     # initialize database tables
     transaction_table, blocks_table, future_table = await init_async_db(test_mode)
@@ -42,6 +44,7 @@ async def my_initialize(block_event: forta_agent.block_event.BlockEvent):
     # if the database is not empty (in case the agent was restarted) we need to clear the old blocks firstly
     await clean_db(block_event.block_number, blocks_table, transaction_table)
 
+    current_block = block_event.block_number
     # we will count the blocks since agent's start
     blocks_counter = 0
     # also we need to know how many blocks left inside the db after the clean to decide is it possible to fit the model
@@ -60,12 +63,13 @@ async def analyze_transaction(transaction_event: forta_agent.transaction_event.T
     """
     global maybe_base_fee
     global real_base_fee_detected
+    global current_block
     findings = []
 
     # Since we can't get the real base fee of the block from the block event, we will try to calculate it using the
     # cheapest transaction in the block. This process is better described in the readme.
     # Upd.: we will do it until completed win streak
-    if not real_base_fee_detected and transaction_event.gas_price < maybe_base_fee:
+    if not real_base_fee_detected and transaction_event.gas_price < maybe_base_fee and transaction_event.block_number == current_block:
         maybe_base_fee = transaction_event.gas_price
 
     # Then we will save and analyze the transactions only for our protocols
@@ -239,11 +243,12 @@ async def base_fee_logic(block_number: int):
             win_streak = 0
 
         if debug_logs_enabled:
+            print(f'INFO: Block: {block_number}')
             print(f'INFO: Calculated base fee: {calculated_base_fee}\n'
                   f'INFO: Maybe base fee: {maybe_base_fee}\n'
                   f'INFO: Current Win Streak: {win_streak}')
 
-        # wen <moon> the win streak is completed the agent will switch to the 'real_base_fee_detected' mode
+        # when the win streak is completed the agent will switch to the 'real_base_fee_detected' mode
         if win_streak == win_streak_limit:
             real_base_fee_detected = True
             if debug_logs_enabled:
@@ -281,9 +286,17 @@ async def analyze_blocks(block_event: forta_agent.block_event.BlockEvent) -> Non
     global blocks_counter
     global current_capacity
     global real_base_fee_detected
+    global current_block
+    global win_streak
 
     blocks = db_utils.get_blocks()
     transactions = db_utils.get_transactions()
+
+    # if the node somehow lose any block than we need to reset win streak and switch back to the undetected mode
+    if current_block != block_event.block_number + 1:
+        real_base_fee_detected = False
+        win_streak = 0
+    current_block = block_event.block_number
 
     # in case we already found the real base fee we can insert it on the fly, else we will do it with the next block
     # in the base_fee_logic() function.
