@@ -229,7 +229,7 @@ async def base_fee_logic(block_number: int):
     prev_block = await blocks.get_row_by_criteria({'block': block_number - 1})
     calculated_base_fee = None
 
-    if prev_block:
+    if prev_block and prev_block.base_fee:
 
         # here we need to calculate the base fee as it is done in Ethereum
         calculated_base_fee = calculate_new_base_fee(prev_block.base_fee, prev_block.gas_limit_total,
@@ -293,7 +293,7 @@ async def analyze_blocks(block_event: forta_agent.block_event.BlockEvent) -> Non
     transactions = db_utils.get_transactions()
 
     # if the node somehow lose any block than we need to reset win streak and switch back to the undetected mode
-    if current_block != block_event.block_number + 1:
+    if current_block + 1 != block_event.block_number:
         real_base_fee_detected = False
         win_streak = 0
     current_block = block_event.block_number
