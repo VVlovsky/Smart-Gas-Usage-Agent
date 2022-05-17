@@ -192,6 +192,11 @@ async def analyze_transaction(transaction_event: forta_agent.transaction_event.T
                     UncertainPriorityFeeFindings.low(protocols, transaction_event.to, future_row.priority_fee_upper,
                                                      priority_fee_lower, transaction_event.hash))
 
+        elif real_base_fee_detected and prev_base_fee:
+            base_fee = calculate_new_base_fee(prev_base_fee, prev_block_row.gas_limit_total,
+                                              prev_block_row.gas_used_total)
+            priority_fee = transaction_event.gas_price - base_fee
+
         # insert the transaction into the database
         await transactions.paste_row({'timestamp': transaction_event.block.timestamp, 'tx': transaction_event.hash,
                                       'block': transaction_event.block_number, 'contract': transaction_event.to,
