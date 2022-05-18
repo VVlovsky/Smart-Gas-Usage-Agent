@@ -1,11 +1,11 @@
-test_mode = True  # The mode when the bot uses test database
+test_mode = False  # The mode when the bot uses test database
 debug_logs_enabled = True  # Print the debug logs
 history_capacity = 6300 * 7  # The amount of blocks to store in the database
 minimal_capacity_to_forecast = 6300 * 1  # The minimal amount of the blocks to start forecasting
 critical_enable = True  # Enables critical alerts
 high_enable = True  # Enables high alerts
-medium_enable = True  # Enables medium alerts
-low_enable = True  # Enables low alerts
+medium_enable = False  # Enables medium alerts
+low_enable = False  # Enables low alerts
 win_streak_limit = 20  # The needed amount of successful checks to be sure that the base_fee was properly calculated
 
 # Specify your own protocols for the Ethereum here
