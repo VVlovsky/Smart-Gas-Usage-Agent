@@ -253,18 +253,6 @@ async def base_fee_logic(block_number: int):
                   f'INFO: Maybe base fee: {maybe_base_fee}\n'
                   f'INFO: Current Win Streak: {win_streak}')
 
-        # when the win streak is completed the agent will switch to the 'real_base_fee_detected' mode
-        if win_streak == win_streak_limit:
-            real_base_fee_detected = True
-            if debug_logs_enabled:
-                print("INFO: Win Streak limit was earned! The real base_fee was detected.")
-
-                block = await blocks.get_row_by_criteria({'block': block_number})
-
-                await blocks.update_row_by_criteria(
-                    {'base_fee': calculate_new_base_fee(block.base_fee, block.gas_limit_total,
-                                                        block.gas_used_total)}, {'block': block_number + 1})
-
         # if the previous block was empty we calculate its base fee
         if maybe_base_fee == float('inf'):
             maybe_base_fee = calculate_new_base_fee(prev_block.base_fee, prev_block.gas_limit_total,
@@ -284,6 +272,18 @@ async def base_fee_logic(block_number: int):
     transactions_hashes_and_priority_fees = {tx.tx: tx.gas_price - base_fee_to_insert for tx in transactions_in_block}
     for tx, priority_fee in transactions_hashes_and_priority_fees.items():
         await transactions.update_row_by_criteria({'priority_fee': priority_fee}, {'tx': tx})
+
+    # when the win streak is completed the agent will switch to the 'real_base_fee_detected' mode
+    if win_streak == win_streak_limit:
+        real_base_fee_detected = True
+        if debug_logs_enabled:
+            print("INFO: Win Streak limit was earned! The real base_fee was detected.")
+
+        block = await blocks.get_row_by_criteria({'block': block_number})
+
+        await blocks.update_row_by_criteria(
+            {'base_fee': calculate_new_base_fee(block.base_fee, block.gas_limit_total,
+                                                block.gas_used_total)}, {'block': block_number + 1})
 
 
 async def analyze_blocks(block_event: forta_agent.block_event.BlockEvent) -> None:
