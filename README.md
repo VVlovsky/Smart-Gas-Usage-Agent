@@ -31,11 +31,15 @@ fill the database completely without delay in one block, part of the functionali
 which reduces the number of requests to the database, speeds up the agent and increases it accuracy, because now we 
 can calculate the priority fee of the transaction for sure.
 
+Upd: There is a chance that the bot will receive a non-canonical block, in which case the base_fee count is reset and 
+the bot returns to phase 1.
+
 When the bot collects enough data, regardless of the phase, the forecast algorithm will be run on the available data. 
 The TODS library with the DeepLog algorithm, which uses LSTM networks, and the Prophet library, 
 which uses Fourier series, proved to be the best for this. It was decided that for the stability of the bot and 
 greater versatility, it is better to use the Prophet library and consider TODS as an experimental backend with 
 a possibility to use it in the future.
+
 
 ## Features
 - Fully asynchronous local database
