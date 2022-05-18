@@ -306,7 +306,7 @@ async def analyze_blocks(block_event: forta_agent.block_event.BlockEvent) -> Non
     prev_block = await blocks.get_row_by_criteria({'block': block_event.block_number - 1})
 
     # if the node somehow lose any block than we need to reset win streak and switch back to the undetected mode
-    if block_event.block.parent_hash != prev_block.block_hash:
+    if prev_block and block_event.block.parent_hash != prev_block.block_hash:
         if debug_logs_enabled:
             print("INFO: Fork block was received or block was missed, recalculating base fee...")
         real_base_fee_detected = False
