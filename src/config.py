@@ -1,4 +1,4 @@
-test_mode = False  # The mode when the bot uses test database
+test_mode = True  # The mode when the bot uses test database
 debug_logs_enabled = True  # Print the debug logs
 history_capacity = 6300 * 7  # The amount of blocks to store in the database
 minimal_capacity_to_forecast = 6300 * 1  # The minimal amount of the blocks to start forecasting

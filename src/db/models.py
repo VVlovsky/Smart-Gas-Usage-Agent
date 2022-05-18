@@ -13,8 +13,6 @@ async def wrapped_models(Base: declarative_base):
         contract = Column(String)
         gas = Column(Integer)
         gas_price = Column(Integer)
-        gas_percentage = Column(Float)
-        gas_percentage_by_limit_in_block = Column(Float)
         priority_fee = Column(Integer)
 
     class Blocks(Base):

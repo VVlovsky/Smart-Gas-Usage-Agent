@@ -259,6 +259,12 @@ async def base_fee_logic(block_number: int):
             if debug_logs_enabled:
                 print("INFO: Win Streak limit was earned! The real base_fee was detected.")
 
+                block = await blocks.get_row_by_criteria({'block': block_number})
+
+                await blocks.update_row_by_criteria(
+                    {'base_fee': calculate_new_base_fee(block.base_fee, block.gas_limit_total,
+                                                        block.gas_used_total)}, {'block': block_number + 1})
+
         # if the previous block was empty we calculate its base fee
         if maybe_base_fee == float('inf'):
             maybe_base_fee = calculate_new_base_fee(prev_block.base_fee, prev_block.gas_limit_total,
@@ -297,8 +303,12 @@ async def analyze_blocks(block_event: forta_agent.block_event.BlockEvent) -> Non
     blocks = db_utils.get_blocks()
     transactions = db_utils.get_transactions()
 
+    prev_block = await blocks.get_row_by_criteria({'block': block_event.block_number - 1})
+
     # if the node somehow lose any block than we need to reset win streak and switch back to the undetected mode
-    if current_block + 1 != block_event.block_number:
+    if current_block + 1 != block_event.block_number or block_event.block.parent_hash != prev_block.block_hash:
+        if debug_logs_enabled:
+            print("INFO: Fork block was received or block was missed, recalculating base fee...")
         real_base_fee_detected = False
         win_streak = 0
     current_block = block_event.block_number
@@ -306,7 +316,6 @@ async def analyze_blocks(block_event: forta_agent.block_event.BlockEvent) -> Non
     # in case we already found the real base fee we can insert it on the fly, else we will do it with the next block
     # in the base_fee_logic() function.
     if real_base_fee_detected:
-        prev_block = await blocks.get_row_by_criteria({'block': block_event.block_number - 1})
         if not prev_block.base_fee:
             prev_prev_row = await blocks.get_row_by_criteria({'block': block_event.block_number - 2})
             prev_base_fee = calculate_new_base_fee(prev_prev_row.base_fee, prev_prev_row.gas_limit_total,

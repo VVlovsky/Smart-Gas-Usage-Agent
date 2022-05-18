@@ -1,6 +1,6 @@
 {
   "name": "smart-gas-usage-agent",
-  "version": "0.0.7",
+  "version": "0.0.9",
   "description": "This bot determines an abnormally high priority fee for the specified protocols using ML.",
   "chainIds": [
     1
