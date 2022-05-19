@@ -306,11 +306,23 @@ async def analyze_blocks(block_event: forta_agent.block_event.BlockEvent) -> Non
     prev_block = await blocks.get_row_by_criteria({'block': block_event.block_number - 1})
 
     # if the node somehow lose any block than we need to reset win streak and switch back to the undetected mode
-    if prev_block and block_event.block.parent_hash != prev_block.block_hash:
+    if not prev_block:
         if debug_logs_enabled:
-            print("INFO: Fork block was received or block was missed, recalculating base fee...")
+            print("INFO: block was missed, recalculating base fee...")
         real_base_fee_detected = False
         win_streak = 0
+
+    elif block_event.block.parent_hash != prev_block.block_hash:
+        if debug_logs_enabled:
+            print("INFO: Fork block was received, querying canonical one...")
+        canonical_block = web3.eth.get_block(block_event.block_number - 1)
+
+        await blocks.update_row_by_criteria(
+            {'block_hash': canonical_block.get('hash'), 'gas_limit_total': canonical_block.get('gasLimit'),
+             'gas_used_total': canonical_block.get('gasUsed')}, {'block': block_event.block_number - 1})
+
+        prev_block = await blocks.get_row_by_criteria({'block': block_event.block_number - 1})
+
     current_block = block_event.block_number
 
     # in case we already found the real base fee we can insert it on the fly, else we will do it with the next block
