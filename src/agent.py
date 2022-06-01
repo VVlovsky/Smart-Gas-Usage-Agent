@@ -64,6 +64,7 @@ async def analyze_transaction(transaction_event: forta_agent.transaction_event.T
     global maybe_base_fee
     global real_base_fee_detected
     global current_block
+    global win_streak
     findings = []
 
     # Since we can't get the real base fee of the block from the block event, we will try to calculate it using the
@@ -120,6 +121,12 @@ async def analyze_transaction(transaction_event: forta_agent.transaction_event.T
             base_fee = calculate_new_base_fee(prev_base_fee, prev_block_row.gas_limit_total,
                                               prev_block_row.gas_used_total)
             priority_fee = transaction_event.gas_price - base_fee
+
+            if priority_fee < 0:
+                priority_fee = 0
+                real_base_fee_detected = False
+                win_streak = 0
+
             error = priority_fee - future_row.priority_fee
 
             if debug_logs_enabled:
